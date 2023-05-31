@@ -30,6 +30,9 @@ def registrar_usuario()-> bool:
     contrasena = myctx.hash(input("Ingrese su contraseña: "))
     dinero = float(input("Ingrese el dinero disponible:"))
 
+    usuarios_str = str(usuarios)
+    file.write(usuarios_str)
+
     # cargo los usuarios existentes
     usuarios = cargar_usuarios()
 
@@ -87,6 +90,7 @@ def obtener_equipos()->dict:
         print("Error en la solicitud:", respuesta.status_code)
         return []
 
+
 def mostrar_menu():
     #cambiar: primero inicia sesion o se registra, y después vienen las demás opciones
     print("Ingrese una opción:")
@@ -97,16 +101,18 @@ def mostrar_menu():
     
 def ejecutar_accion(opcion:str):
     if opcion == "1": #unicamente para testear, no es por si solo una consigna
+
         equipos = obtener_equipos()
         print("Equipos en la liga argentina:")
         for equipo in equipos:
             print(equipo['team']['name'])
+
     elif opcion == "2":
         pass
     elif opcion == "3":
         pass
     else:
-            print("Error, intente nuevamente (recuerde que debe ingresar un número)")
+        print("Error, intente nuevamente (recuerde que debe ingresar un número)")
 
 def main():   
     finalizar = False
