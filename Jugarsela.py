@@ -90,11 +90,13 @@ def obtener_equipos()->dict:
 
 def mostrar_menu():
     #cambiar: primero inicia sesion o se registra, y después vienen las demás opciones
-    print("Ingrese una opción:")
+    print("Ingrese el número correspondiente a la opción que desee:")
     print("0) Salir")
-    print("1) Listar equipos de la liga argentina") #cambiar
-    print("2) ")
-    print("3) ")
+    print("1) Mostrar el plantel completo de un equipo ingresado") #incompleto
+    print("2) Mostrar la tabla de posiciones de la Liga profesional, ingresando la temporada")
+    print("3) Mostrar toda la información posible sobre el estadio y escudo de un equipo")
+    print("4) Mostrar los goles y los minutos en los que fueron realizados para un equipo")
+    print("5) Cargar dinero en cuenta de usuario")
     
 def ejecutar_accion(opcion:str):
     if opcion == "1": #unicamente para testear, no es por si solo una consigna
