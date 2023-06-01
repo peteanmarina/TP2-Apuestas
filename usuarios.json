@@ -26,5 +26,12 @@
         "cantidad": 0,
         "fecha": null,
         "dinero": 10000.0
+    },
+    "lalala123@gmail.com": {
+        "nombre": "lala17",
+        "contrasena": "$5$rounds=535000$K0wUX9tDGQLxto/U$bpni.ZawMP1KB2FjSLdGHiwc1wWo9af5ka.mMOPhwv6",
+        "cantidad": 0,
+        "fecha": null,
+        "dinero": 129.0
     }
 }

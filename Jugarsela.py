@@ -76,7 +76,7 @@ def obtener_equipos()->dict:
     }
 
     # solicito los equipos de la liga argentina
-    respuesta = requests.get(url, params=params, headers=headers)
+    respuesta = requests.request("GET", url, headers=headers)
 
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
