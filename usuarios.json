@@ -12,5 +12,19 @@
         "cantidad": 0,
         "fecha": null,
         "dinero": 2000.0
+    },
+    "susanita123@gmail.com": {
+        "nombre": "susana22",
+        "contrasena": "$5$rounds=535000$VbSj2tNDm4r1pa9F$WqT94ZvlyHPp1ax8LhehMQRY3mN6xjlnp1hSPV3oIv/",
+        "cantidad": 0,
+        "fecha": null,
+        "dinero": 100.0
+    },
+    "mariafernandez@gmail.com": {
+        "nombre": "marifer",
+        "contrasena": "$5$rounds=535000$szjHdIohd6Ca1X2X$EUwhACBdBimWm0yjQoul0EKHL7S2eVMifhhZ10E/DQ6",
+        "cantidad": 0,
+        "fecha": null,
+        "dinero": 10000.0
     }
 }
