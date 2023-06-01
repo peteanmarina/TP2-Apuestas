@@ -29,10 +29,7 @@ def registrar_usuario()-> bool:
     nombre = input("Ingrese su nombre de usuario:")
     contrasena = myctx.hash(input("Ingrese su contraseña: "))
     dinero = float(input("Ingrese el dinero disponible:"))
-
-    usuarios_str = str(usuarios)
-    file.write(usuarios_str)
-
+    
     # cargo los usuarios existentes
     usuarios = cargar_usuarios()
 
@@ -47,7 +44,7 @@ def registrar_usuario()-> bool:
     # actualizo los usuarios
     guardar_usuarios(usuarios)
     print("Registro realizado")
-    return True #ver en un futuro que cosas harían que no se registre
+    return False #ver en un futuro que cosas harían que no se registre
 
 def iniciar_sesion() -> bool:
     usuarios=cargar_usuarios()
