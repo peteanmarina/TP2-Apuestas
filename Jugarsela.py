@@ -1,25 +1,43 @@
 import os
-import requests #me lo subraya, pero funciona. preguntar
-from passlib.context import CryptContext #me lo subraya, pero funciona. preguntar
-import json
+import requests
+from passlib.context import CryptContext
+import csv
 
-def cargar_usuarios()-> dict:
+def cargar_usuarios() -> dict:
     usuarios = {}
-    archivo_usuarios ='usuarios.json'
-    if os.path.isfile(archivo_usuarios):
-        if os.path.getsize(archivo_usuarios) > 0: #si el archivo no está vacío
-            with open(archivo_usuarios, 'r') as file:
-                usuarios_str =file.read()
-                if usuarios_str:
-                    usuarios=json.loads(usuarios_str)
-        else: #el archivo estaba vacio
-            with open(archivo_usuarios, 'w') as file:
-                json.dump(usuarios,file,indent=4)
+    archivo_usuarios = 'usuarios.csv'
+    
+    if os.path.isfile(archivo_usuarios): # si el archivo existe
+        with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv: # modo lectura
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)  # Leer la primera línea (encabezado)
+            for row in csv_reader:
+                correo = row[0]
+                usuarios[correo] = {
+                    'nombre': row[1],
+                    'contrasena': row[2],
+                    'cantidad': float(row[3]),
+                    'fecha': row[4],
+                    'dinero': float(row[5])
+                }
+    
     return usuarios
 
 def guardar_usuarios(usuarios):
-    with open('usuarios.json', 'w') as file:
-        json.dump(usuarios,file, indent=4)
+    
+    with open('usuarios.csv', 'w', newline='', encoding='UTF-8') as archivo_csv:
+        csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer.writerow(['correo', 'nombre', 'contrasena', 'cantidad', 'fecha', 'dinero'])  # Escribir el encabezado
+        
+        for correo, datos in usuarios.items():
+            csv_writer.writerow([
+                correo,
+                datos['nombre'],
+                datos['contrasena'],
+                datos['cantidad'],
+                datos['fecha'],
+                datos['dinero']
+            ])
 
 def registrar_usuario()-> bool:
     no_se_identifica_usuario:bool= True
