@@ -20,7 +20,6 @@ def cargar_usuarios() -> dict:
                     'fecha': row[4],
                     'dinero': float(row[5])
                 }
-    
     return usuarios
 
 def guardar_usuarios(usuarios):
@@ -81,6 +80,31 @@ def iniciar_sesion() -> bool:
         no_se_identifica_usuario=True
     return no_se_identifica_usuario
 
+def mostrar_plantel(id_equipo:int)->None:
+    url = "https://v3.football.api-sports.io/players"
+    params = {
+        "league": "128",
+        "season": 2023,
+        "team": id_equipo
+    }
+
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
+    }
+    
+    # solicito equipo indicado por parametro
+    respuesta = requests.get(url, params=params, headers=headers)
+
+    # verifico estado de la solicitud
+    if respuesta.status_code == 200: #si fue exitosa
+        data = respuesta.json()
+        plantel = data['response']
+        for jugador in plantel:
+            print(jugador['player']['name'])
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
+
 def obtener_equipos()->dict:
     url = "https://v3.football.api-sports.io/teams"
     params = {
@@ -120,10 +144,18 @@ def ejecutar_accion(opcion:str):
     if opcion == "1": #unicamente para testear, no es por si solo una consigna
 
         equipos = obtener_equipos()
-        print("Equipos en la liga argentina:")
+        print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         for equipo in equipos:
             print(equipo['team']['name'])
-
+            print(equipo['team']['id'])
+        print("Ingrese nombre del equipo que desee ver el plantel")
+        equipo_elegido= input()
+        for equipo in equipos:
+            if(equipo_elegido == equipo['team']['name']):
+                print()
+                print(f"Elegiste ver plantel de ",equipo['team']['name'])
+                id=equipo['team']['id']
+        mostrar_plantel(id)
     elif opcion == "2":
         pass
     elif opcion == "3":
