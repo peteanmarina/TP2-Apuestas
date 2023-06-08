@@ -92,9 +92,9 @@ def obtener_equipos()->dict:
         'x-rapidapi-host': "v3.football.api-sports.io",
         'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
     }
-
+    
     # solicito los equipos de la liga argentina
-    respuesta = requests.request("GET", url, headers=headers)
+    respuesta = requests.get(url, params=params, headers=headers)
 
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
