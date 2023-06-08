@@ -1,25 +1,42 @@
 import os
-import requests #me lo subraya, pero funciona. preguntar
-from passlib.context import CryptContext #me lo subraya, pero funciona. preguntar
-import json
+import requests
+from passlib.context import CryptContext
+import csv
 
-def cargar_usuarios()-> dict:
+def cargar_usuarios() -> dict:
     usuarios = {}
-    archivo_usuarios ='usuarios.json'
-    if os.path.isfile(archivo_usuarios):
-        if os.path.getsize(archivo_usuarios) > 0: #si el archivo no está vacío
-            with open(archivo_usuarios, 'r') as file:
-                usuarios_str =file.read()
-                if usuarios_str:
-                    usuarios=json.loads(usuarios_str)
-        else: #el archivo estaba vacio
-            with open(archivo_usuarios, 'w') as file:
-                json.dump(usuarios,file,indent=4)
+    archivo_usuarios = 'usuarios.csv'
+    
+    if os.path.isfile(archivo_usuarios): # si el archivo existe
+        with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv: # modo lectura
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)  # Leer la primera línea (encabezado)
+            for row in csv_reader:
+                correo = row[0]
+                usuarios[correo] = {
+                    'nombre': row[1],
+                    'contrasena': row[2],
+                    'cantidad': float(row[3]),
+                    'fecha': row[4],
+                    'dinero': float(row[5])
+                }
     return usuarios
 
 def guardar_usuarios(usuarios):
-    with open('usuarios.json', 'w') as file:
-        json.dump(usuarios,file, indent=4)
+    
+    with open('usuarios.csv', 'w', newline='', encoding='UTF-8') as archivo_csv:
+        csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer.writerow(['correo', 'nombre', 'contrasena', 'cantidad', 'fecha', 'dinero'])  # Escribir el encabezado
+        
+        for correo, datos in usuarios.items():
+            csv_writer.writerow([
+                correo,
+                datos['nombre'],
+                datos['contrasena'],
+                datos['cantidad'],
+                datos['fecha'],
+                datos['dinero']
+            ])
 
 def registrar_usuario()-> bool:
     no_se_identifica_usuario:bool= True
@@ -63,6 +80,31 @@ def iniciar_sesion() -> bool:
         no_se_identifica_usuario=True
     return no_se_identifica_usuario
 
+def mostrar_plantel(id_equipo:int)->None:
+    url = "https://v3.football.api-sports.io/players"
+    params = {
+        "league": "128",
+        "season": 2023,
+        "team": id_equipo
+    }
+
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
+    }
+    
+    # solicito equipo indicado por parametro
+    respuesta = requests.get(url, params=params, headers=headers)
+
+    # verifico estado de la solicitud
+    if respuesta.status_code == 200: #si fue exitosa
+        data = respuesta.json()
+        plantel = data['response']
+        for jugador in plantel:
+            print(jugador['player']['name'])
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
+
 def obtener_equipos()->dict:
     url = "https://v3.football.api-sports.io/teams"
     params = {
@@ -74,9 +116,9 @@ def obtener_equipos()->dict:
         'x-rapidapi-host': "v3.football.api-sports.io",
         'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
     }
-
+    
     # solicito los equipos de la liga argentina
-    respuesta = requests.request("GET", url, headers=headers)
+    respuesta = requests.get(url, params=params, headers=headers)
 
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
@@ -102,10 +144,18 @@ def ejecutar_accion(opcion:str):
     if opcion == "1": #unicamente para testear, no es por si solo una consigna
 
         equipos = obtener_equipos()
-        print("Equipos en la liga argentina:")
+        print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         for equipo in equipos:
             print(equipo['team']['name'])
-
+            print(equipo['team']['id'])
+        print("Ingrese nombre del equipo que desee ver el plantel")
+        equipo_elegido= input()
+        for equipo in equipos:
+            if(equipo_elegido == equipo['team']['name']):
+                print()
+                print(f"Elegiste ver plantel de ",equipo['team']['name'])
+                id=equipo['team']['id']
+        mostrar_plantel(id)
     elif opcion == "2":
         pass
     elif opcion == "3":
