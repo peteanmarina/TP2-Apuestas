@@ -130,6 +130,37 @@ def obtener_equipos()->dict:
         return []
 
 
+def mostrar_informacion_estadio_y_escudo(id_equipo): #falta lo del escudo
+    
+    url = "https://v3.football.api-sports.io/teams"
+    params = {
+        "league": "128",
+        "season": 2023,
+        "country": "Argentina",
+        "id": id_equipo
+    }
+
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
+    }
+    
+    # solicito equipo indicado por parametro
+    respuesta = requests.get(url, params=params, headers=headers)
+    # verifico estado de la solicitud
+    if respuesta.status_code == 200: #si fue exitosa
+        data = respuesta.json()
+        equipo = data['response']
+        estadio = equipo[0]['venue'] #como devuelve una lista, debo tomar el primer elemento, por más que sea el único
+        print("Nombre del estadio:", estadio['name'])
+        print("Dirección:", estadio['address'])
+        print("Ciudad:", estadio['city'])
+        print("Capacidad:", estadio['capacity'])
+        print("Superficie:", estadio['surface'])
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
+
+
 def mostrar_menu():
     #cambiar: primero inicia sesion o se registra, y después vienen las demás opciones
     print("Ingrese el número correspondiente a la opción que desee:")
@@ -140,28 +171,42 @@ def mostrar_menu():
     print("4) Mostrar los goles y los minutos en los que fueron realizados para un equipo")
     print("5) Cargar dinero en cuenta de usuario")
     
-def ejecutar_accion(opcion:str):
-    if opcion == "1": #unicamente para testear, no es por si solo una consigna
-
-        equipos = obtener_equipos()
+def ejecutar_accion(opcion:str, equipos:dict):
+    if opcion == "1": 
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
-        for equipo in equipos:
-            print(equipo['team']['name'])
-            print(equipo['team']['id'])
+        mostrar_equipos(equipos)
         print("Ingrese nombre del equipo que desee ver el plantel")
         equipo_elegido= input()
-        for equipo in equipos:
-            if(equipo_elegido == equipo['team']['name']):
-                print()
-                print(f"Elegiste ver plantel de ",equipo['team']['name'])
-                id=equipo['team']['id']
+        id= obtener_id_equipo(equipos, equipo_elegido)
         mostrar_plantel(id)
+
     elif opcion == "2":
         pass
+
     elif opcion == "3":
+        print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
+        mostrar_equipos(equipos)
+        print("Ingrese nombre del equipo que desee ver la información sobre el estadio y su escudo")
+        equipo_elegido= input()
+        id= obtener_id_equipo(equipos, equipo_elegido)
+        mostrar_informacion_estadio_y_escudo(id)
+
+    elif opcion == "4":
         pass
     else:
         print("Error, intente nuevamente (recuerde que debe ingresar un número)")
+
+def mostrar_equipos(equipos):
+    for equipo in equipos:
+        print(equipo['team']['name'])
+        print(equipo['team']['id'])
+
+def obtener_id_equipo(equipos, equipo_elegido)->str:
+    for equipo in equipos:
+        if(equipo_elegido == equipo['team']['name']):
+            print()
+            id=equipo['team']['id']
+    return id
 
 def main():   
     finalizar = False
@@ -172,12 +217,12 @@ def main():
             no_se_identifica_usuario = iniciar_sesion()
         else:
             no_se_identifica_usuario= registrar_usuario()
-
+    equipos=obtener_equipos()
     while not finalizar:
         mostrar_menu()
         opcion = input()
         if opcion!= "0":
-            ejecutar_accion(opcion)
+            ejecutar_accion(opcion, equipos)
         else:
             finalizar = True
             print("Hasta pronto")
