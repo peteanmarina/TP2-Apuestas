@@ -2,7 +2,10 @@ import os
 import requests
 from passlib.context import CryptContext
 import csv
+import random
+import matplotlib
 
+#se repite mucho codigo al hacer consultas a la api, más adelante crear alguna funcion que lo evite
 def cargar_usuarios() -> dict:
     usuarios = {}
     archivo_usuarios = 'usuarios.csv'
@@ -23,7 +26,7 @@ def cargar_usuarios() -> dict:
     return usuarios
 
 def guardar_usuarios(usuarios):
-    
+
     with open('usuarios.csv', 'w', newline='', encoding='UTF-8') as archivo_csv:
         csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
         csv_writer.writerow(['correo', 'nombre', 'contrasena', 'cantidad', 'fecha', 'dinero'])  # Escribir el encabezado
@@ -119,57 +122,44 @@ def obtener_equipos()->dict:
     
     # solicito los equipos de la liga argentina
     respuesta = requests.get(url, params=params, headers=headers)
-
+    equipos={}
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
         data = respuesta.json()
         equipos = data['response']
-        return equipos
+        
     else:
         print("Error en la solicitud:", respuesta.status_code)
-        return []
+    return equipos
 
+def obtener_fixtures(id_equipo, fixtures):
+    for fixture in fixtures:
+        if(fixture['team']["id"]==id_equipo):
+            fixture_por_equipo=fixture
+    return fixture_por_equipo
 
-def mostrar_informacion_estadio_y_escudo(id_equipo): #falta lo del escudo
+def mostrar_informacion_estadio_y_escudo(id_equipo, equipos): #falta lo del escudo
+    estadio:dict={}
+    for equipo in equipos:
+        if(equipo['team']["id"]==id_equipo):
+            estadio=equipo['venue']
     
-    url = "https://v3.football.api-sports.io/teams"
-    params = {
-        "league": "128",
-        "season": 2023,
-        "country": "Argentina",
-        "id": id_equipo
-    }
-
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
-    }
-    
-    # solicito equipo indicado por parametro
-    respuesta = requests.get(url, params=params, headers=headers)
-    # verifico estado de la solicitud
-    if respuesta.status_code == 200: #si fue exitosa
-        data = respuesta.json()
-        equipo = data['response']
-        estadio = equipo[0]['venue'] #como devuelve una lista, debo tomar el primer elemento, por más que sea el único
-        print("Nombre del estadio:", estadio['name'])
-        print("Dirección:", estadio['address'])
-        print("Ciudad:", estadio['city'])
-        print("Capacidad:", estadio['capacity'])
-        print("Superficie:", estadio['surface'])
-    else:
-        print("Error en la solicitud:", respuesta.status_code)
-
+    print("Nombre del estadio:", estadio['name'])
+    print("Dirección:", estadio['address'])
+    print("Ciudad:", estadio['city'])
+    print("Capacidad:", estadio['capacity'])
+    print("Superficie:", estadio['surface'])
 
 def mostrar_menu():
     #cambiar: primero inicia sesion o se registra, y después vienen las demás opciones
     print("Ingrese el número correspondiente a la opción que desee:")
     print("0) Salir")
-    print("1) Mostrar el plantel completo de un equipo ingresado") #incompleto
+    print("1) Mostrar el plantel completo de un equipo ingresado") #incompleto falta escudo
     print("2) Mostrar la tabla de posiciones de la Liga profesional, ingresando la temporada")
     print("3) Mostrar toda la información posible sobre el estadio y escudo de un equipo")
     print("4) Mostrar los goles y los minutos en los que fueron realizados para un equipo")
     print("5) Cargar dinero en cuenta de usuario")
+    print("8) Apostar")
     
 def ejecutar_accion(opcion:str, equipos:dict):
     if opcion == "1": 
@@ -177,7 +167,9 @@ def ejecutar_accion(opcion:str, equipos:dict):
         mostrar_equipos(equipos)
         print("Ingrese nombre del equipo que desee ver el plantel")
         equipo_elegido= input()
-        id= obtener_id_equipo(equipos, equipo_elegido)
+        id=0
+        while(id==0):
+            id= obtener_id_equipo(equipos, equipo_elegido)
         mostrar_plantel(id)
 
     elif opcion == "2":
@@ -188,13 +180,90 @@ def ejecutar_accion(opcion:str, equipos:dict):
         mostrar_equipos(equipos)
         print("Ingrese nombre del equipo que desee ver la información sobre el estadio y su escudo")
         equipo_elegido= input()
-        id= obtener_id_equipo(equipos, equipo_elegido)
-        mostrar_informacion_estadio_y_escudo(id)
+        id=0
+        while(id==0):
+            id=obtener_id_equipo(equipos, equipo_elegido)
+        mostrar_informacion_estadio_y_escudo(id, equipos)
 
     elif opcion == "4":
         pass
+    elif opcion == "8":
+        apostar(equipos)
     else:
         print("Error, intente nuevamente (recuerde que debe ingresar un número)")
+
+def apostar(equipos):
+    print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
+    mostrar_equipos(equipos)
+    print("Ingrese nombre de un equipo para ver un listado del fixture")
+    equipo_elegido= input()
+    id_equipo= obtener_id_equipo(equipos, equipo_elegido)
+    fixture:dict= obtener_fixture_de_equipo(id_equipo)
+    pago_por_partido_y_equipo={}
+    for partido in fixture:
+        local_win_or_draw=False
+        visitante_team_win_or_draw=False
+        local_win_or_draw = partido["teams"]["home"].get("win_or_draw")
+        visitante_team_win_or_draw = partido["teams"]["away"].get("win_or_draw")
+
+        pago_local=calcular_pago_equipo_partido(local_win_or_draw)
+        pago_visitante= calcular_pago_equipo_partido(visitante_team_win_or_draw)
+
+        local = partido["teams"]["home"]["name"]
+        visitante = partido["teams"]["away"]["name"]
+
+        diccionario_partido = {
+            local: pago_local,
+            visitante: pago_visitante
+        }
+
+        pago_por_partido_y_equipo[partido["fixture"]["id"]]=diccionario_partido
+
+        fecha = partido["fixture"]["date"]
+        
+        print(f"Para el día ",fecha)
+        print(f"Equipo local:", local, "")
+        print(f"Equipo visitante:", visitante)
+        
+def calcular_pago_equipo_partido(win_or_draw:bool)->float:
+    cantidad_veces=random.randint(1, 4)
+
+    if (win_or_draw):
+        porcentaje=10
+    else:
+        porcentaje=100
+
+    return cantidad_veces*porcentaje/100
+
+
+def obtener_fixture_de_equipo(id_equipo, fixtures)->dict:
+    for partidos in fixtures:
+        if(fixtures['']==id_equipo):
+            pass
+            
+
+def obtener_fixtures():
+    url = "https://v3.football.api-sports.io/fixtures"
+    params = {
+        "league": "128",
+        "season": 2023
+    }
+
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
+    }
+    
+    # solicito equipo indicado por parametro
+    respuesta = requests.get(url, params=params, headers=headers)
+    # verifico estado de la solicitud
+    fixture={}
+    if respuesta.status_code == 200: #si fue exitosa
+        data = respuesta.json()
+        fixture = data['response']
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
+    return fixture
 
 def mostrar_equipos(equipos):
     for equipo in equipos:
@@ -202,10 +271,13 @@ def mostrar_equipos(equipos):
         print(equipo['team']['id'])
 
 def obtener_id_equipo(equipos, equipo_elegido)->str:
+    #devuelve 0 si no se encuentra
+    id=0
     for equipo in equipos:
         if(equipo_elegido == equipo['team']['name']):
             print()
             id=equipo['team']['id']
+            print(equipo['team'])
     return id
 
 def main():   
@@ -217,7 +289,10 @@ def main():
             no_se_identifica_usuario = iniciar_sesion()
         else:
             no_se_identifica_usuario= registrar_usuario()
+
+    fixtures= obtener_fixtures()
     equipos=obtener_equipos()
+
     while not finalizar:
         mostrar_menu()
         opcion = input()
