@@ -93,7 +93,7 @@ def mostrar_menu():
     print("5) Cargar dinero en cuenta de usuario")
     print("8) Apostar")
     
-def ejecutar_accion(opcion:str, equipos:dict):
+def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict):
     if opcion == "1": 
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
@@ -102,7 +102,7 @@ def ejecutar_accion(opcion:str, equipos:dict):
         id=0
         while(id==0):
             id= obtener_id_equipo(equipos, equipo_elegido)
-        mostrar_plantel(id)
+        mostrar_plantel(id, jugadores)
 
     elif opcion == "2":
         pass
@@ -130,7 +130,7 @@ def apostar(equipos):
     print("Ingrese nombre de un equipo para ver un listado del fixture")
     equipo_elegido= input()
     id_equipo= obtener_id_equipo(equipos, equipo_elegido)
-    fixture:dict= obtener_fixture_de_equipo(id_equipo)
+    fixture:dict= obtener_fixture_de_equipo(id_equipo, fixtures)
     pago_por_partido_y_equipo={}
     for partido in fixture:
         
@@ -151,10 +151,9 @@ def calcular_pago_equipo_partido(win_or_draw:bool)->float:
         porcentaje=100
     return cantidad_veces*porcentaje/100
 
-
 def mostrar_plantel(id_equipo:int, jugadores:dict)->None:
     for jugador in jugadores:
-        if(jugador['statistics']['team']['id']==id_equipo):
+        if(jugador['statistics'][0]['team']['id']==id_equipo):
             print(jugador['player']['name'])
 
 def obtener_equipos()->dict:
@@ -208,13 +207,14 @@ def obtener_jugadores()->dict:
     
     # solicito equipo indicado por parametro
     respuesta = requests.get(url, params=params, headers=headers)
-
+    jugadores={}
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
         data = respuesta.json()
-        plantel = data['response']
+        jugadores = data['response']
     else:
         print("Error en la solicitud:", respuesta.status_code)
+    return jugadores
 
 
 def obtener_fixtures()->dict:
@@ -254,7 +254,7 @@ def obtener_fixtures()->dict:
 
     return fixture
 
-def obtener_fixture_de_equipo(id_equipo, fixtures)->dict:
+def obtener_fixture_de_equipo(id_equipo:int, fixtures:dict)->dict:
     fixture_equipo:dict={}
     for partido in fixtures:
         if(fixtures['teams']['home']==id_equipo or fixtures['teams']['away']==id_equipo):
