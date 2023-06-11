@@ -5,7 +5,6 @@ import csv
 import random
 import matplotlib
 
-#se repite mucho codigo al hacer consultas a la api, más adelante crear alguna funcion que lo evite
 def cargar_usuarios() -> dict:
     usuarios = {}
     archivo_usuarios = 'usuarios.csv'
@@ -133,6 +132,7 @@ def obtener_equipos()->dict:
     return equipos
 
 def obtener_fixtures(id_equipo, fixtures):
+
     for fixture in fixtures:
         if(fixture['team']["id"]==id_equipo):
             fixture_por_equipo=fixture
@@ -201,23 +201,11 @@ def apostar(equipos):
     fixture:dict= obtener_fixture_de_equipo(id_equipo)
     pago_por_partido_y_equipo={}
     for partido in fixture:
-        local_win_or_draw=False
-        visitante_team_win_or_draw=False
-        local_win_or_draw = partido["teams"]["home"].get("win_or_draw")
-        visitante_team_win_or_draw = partido["teams"]["away"].get("win_or_draw")
-
-        pago_local=calcular_pago_equipo_partido(local_win_or_draw)
-        pago_visitante= calcular_pago_equipo_partido(visitante_team_win_or_draw)
+        
 
         local = partido["teams"]["home"]["name"]
         visitante = partido["teams"]["away"]["name"]
 
-        diccionario_partido = {
-            local: pago_local,
-            visitante: pago_visitante
-        }
-
-        pago_por_partido_y_equipo[partido["fixture"]["id"]]=diccionario_partido
 
         fecha = partido["fixture"]["date"]
         
@@ -227,22 +215,23 @@ def apostar(equipos):
         
 def calcular_pago_equipo_partido(win_or_draw:bool)->float:
     cantidad_veces=random.randint(1, 4)
-
     if (win_or_draw):
         porcentaje=10
     else:
         porcentaje=100
-
     return cantidad_veces*porcentaje/100
 
 
 def obtener_fixture_de_equipo(id_equipo, fixtures)->dict:
-    for partidos in fixtures:
-        if(fixtures['']==id_equipo):
-            pass
+    fixture_equipo:dict={}
+    for partido in fixtures:
+        if(fixtures['teams']['home']==id_equipo or fixtures['teams']['away']==id_equipo):
+            fixture_equipo=partido
+    print(fixture_equipo)
+    return fixture_equipo
             
 
-def obtener_fixtures():
+def obtener_fixtures()->dict:
     url = "https://v3.football.api-sports.io/fixtures"
     params = {
         "league": "128",
@@ -261,8 +250,25 @@ def obtener_fixtures():
     if respuesta.status_code == 200: #si fue exitosa
         data = respuesta.json()
         fixture = data['response']
+        for partido in fixture:
+            local_win_or_draw=False
+            visitante_team_win_or_draw=False
+
+            local_win_or_draw = partido["teams"]["home"].get("win_or_draw")
+            visitante_team_win_or_draw = partido["teams"]["away"].get("win_or_draw")
+
+            pago_local=calcular_pago_equipo_partido(local_win_or_draw)
+            pago_visitante= calcular_pago_equipo_partido(visitante_team_win_or_draw)
+
+            fixture['teams']['home']['cantidad_veces_pago'] = 'valor_nuevo_home'
+            fixture['teams']['away']['cantidad_veces_pago'] = 'valor_nuevo_away'
+
     else:
         print("Error en la solicitud:", respuesta.status_code)
+
+
+
+
     return fixture
 
 def mostrar_equipos(equipos):
@@ -297,7 +303,7 @@ def main():
         mostrar_menu()
         opcion = input()
         if opcion!= "0":
-            ejecutar_accion(opcion, equipos)
+            ejecutar_accion(opcion, equipos, fixtures)
         else:
             finalizar = True
             print("Hasta pronto")
