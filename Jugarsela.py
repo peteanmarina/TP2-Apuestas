@@ -100,8 +100,8 @@ def mostrar_menu():
     print("3) Mostrar toda la información posible sobre el estadio y escudo de un equipo")
     print("4) Mostrar los goles y los minutos en los que fueron realizados para un equipo")
     print("5) Cargar dinero en cuenta de usuario") 
-    print("6)") 
-    print("7)")
+    print("6) Usuario que más apostó") 
+    print("7) Usuario que más gano")
     print("8) Apostar")
     
 def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id_usuario):
@@ -130,6 +130,14 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
 
     elif opcion == "4":
         pass
+    elif opcion == "5":
+        confirmacion = input("¿Desea cargar dinero a cuenta? (S/N)").lower()
+        if confirmacion == "s":
+            modificar_dinero_usuario(id_usuario, " ", " ")
+    elif opcion == "6": 
+        print ("Usuario que más apostó") # probando funcion aparte 
+    elif opcion == "7":
+        print ("Usuario que más gano")  #idem 6
     elif opcion == "8":
         apostar(equipos, fixtures, id_usuario)
     else:
@@ -216,7 +224,27 @@ def obtener_win_or_draw(partido)-> str:
     return equipo_win_or_draw
 
 def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
-    pass
+     archivo_usuarios = 'usuarios.csv'
+     usuarios = {}
+     
+     if os.path.isfile(archivo_usuarios):
+        with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv:
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)
+            for row in csv_reader:
+                correo = row[0]
+                usuarios[correo] = {
+                    'dinero': float(row[5])
+                }
+    
+     monto = input ("Monto a cargar: ")
+     monto = float(monto)
+     if id_usuario in usuarios:
+        dinero_en_cuenta = usuarios[id_usuario]['dinero'] 
+        usuarios[id_usuario]["dinero"] = dinero_en_cuenta + monto
+
+     print (f"Ahora posee {usuarios[id_usuario]['dinero']} disponible en su cuenta. ")
+
 
 def verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)->bool:
     archivo_usuarios = 'usuarios.csv'
