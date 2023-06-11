@@ -5,6 +5,18 @@ import csv
 import random
 import matplotlib
 #vicky, para el ingreso de dinero, ver funcion"registrar_nueva_transaccion"
+
+def ingresar_entero(min: int, max: int)->int:
+    #Funcion que recibe un numero número mínimo y uno máximo y permite al usuario ingresar valores hasta que uno sea entero y se encuentre en el rango númerico indicado por esos números
+    #Devuelve un entero, ingresado por el usuario
+    número=input()
+    while (not número.isdigit() or int(número)>max or int(número)<min):
+        #Si la primera condicion se cumple, no lee las que siguen y por eso ya puedo convertirlo a int
+        print(f"ERROR. Intente de nuevo, recuerde que debe ser un número entero entre {min} y {max}")
+        número=input()
+        
+    return int(número)
+
 def cargar_usuarios() -> dict:
     usuarios = {}
     archivo_usuarios = 'usuarios.csv'
@@ -40,8 +52,7 @@ def guardar_usuarios(usuarios):
                 datos['dinero']
             ])
 
-def registrar_usuario()-> bool:
-    no_se_identifica_usuario:bool= True
+def registrar_usuario()-> str: #TODO validar mail no repetido
     myctx = CryptContext(schemes=["sha256_crypt", "md5_crypt"])
 
     correo = input("Ingrese correo electrónico: ")
@@ -63,11 +74,10 @@ def registrar_usuario()-> bool:
     # actualizo los usuarios
     guardar_usuarios(usuarios)
     print("Registro realizado")
-    return False #ver en un futuro que cosas harían que no se registre
+    return correo 
 
-def iniciar_sesion() -> bool:
+def iniciar_sesion() -> str:
     usuarios=cargar_usuarios()
-    no_se_identifica_usuario:bool= True
 
     myctx = CryptContext(schemes=["sha256_crypt", "md5_crypt"])
     myctx.default_scheme()
@@ -76,11 +86,10 @@ def iniciar_sesion() -> bool:
 
     if correo in usuarios and myctx.verify(contrasena, usuarios[correo]['contrasena']):
         print("Inicio de sesión realizado")
-        no_se_identifica_usuario=False
     else:
         print("Contraseña incorrecta")
-        no_se_identifica_usuario=True
-    return no_se_identifica_usuario
+        correo=0
+    return correo
 
 def mostrar_menu():
     #cambiar: primero inicia sesion o se registra, y después vienen las demás opciones
@@ -95,7 +104,7 @@ def mostrar_menu():
     print("7)")
     print("8) Apostar")
     
-def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict):
+def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id_usuario):
     if opcion == "1": 
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
@@ -122,11 +131,11 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict):
     elif opcion == "4":
         pass
     elif opcion == "8":
-        apostar(equipos)
+        apostar(equipos, fixtures, id_usuario)
     else:
         print("Error, intente nuevamente (recuerde que debe ingresar un número)")
 
-def apostar(equipos):
+def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
     mostrar_equipos(equipos)
     print("Ingrese nombre de un equipo para ver un listado del fixture")
@@ -135,16 +144,23 @@ def apostar(equipos):
     fixture:dict= obtener_fixture_de_equipo(id_equipo, fixtures)
     pago_por_partido_y_equipo={}
     for partido in fixture:
-        
+        n=1
         local = partido["teams"]["home"]["name"]
         visitante = partido["teams"]["away"]["name"]
-
+        pago_local= partido['teams']['home']['cantidad_veces_pago']
+        pago_visitante= partido['teams']['away']['cantidad_veces_pago']
         fecha = partido["fixture"]["date"]
-        
+        print(n:)
         print(f"Para el día ",fecha)
-        print(f"Equipo local:", local, "")
-        print(f"Equipo visitante:", visitante)
-        
+        print(f"Equipo local:", local, "paga: ",pago_local,"veces de lo apostado")
+        print(f"Equipo visitante:", visitante,"paga: ",pago_visitante,"veces de lo apostado")
+        n+=1
+    print("Ingrese la fecha del partido para el que quiere apostar, YYYYMMDD")
+    fecha= input()
+
+    #registrar_nueva_transaccion(id_usuario, tipo_resultado, importe)
+
+
 def calcular_pago_equipo_partido(win_or_draw:bool)->float:
     cantidad_veces=random.randint(1, 4)
     if (win_or_draw):
@@ -290,14 +306,14 @@ def obtener_id_equipo(equipos, equipo_elegido)->str:
 
 def main():   
     finalizar = False
-    no_se_identifica_usuario:bool= True
-    while (no_se_identifica_usuario):
+    id_usuario:str= 0
+    while (id_usuario==0):
         print("Tiene una cuenta? 1: Si, otro caracter: no")
         if(input() == "1"):
-            no_se_identifica_usuario = iniciar_sesion()
+            id_usuario = iniciar_sesion()
         else:
-            no_se_identifica_usuario= registrar_usuario()
-
+            id_usuario= registrar_usuario()1
+    
     fixtures= obtener_fixtures()
     equipos=obtener_equipos()
     jugadores=obtener_jugadores()
@@ -306,7 +322,7 @@ def main():
         mostrar_menu()
         opcion = input()
         if opcion!= "0":
-            ejecutar_accion(opcion, equipos, fixtures, jugadores)
+            ejecutar_accion(opcion, equipos, fixtures, jugadores,id_usuario)
         else:
             finalizar = True
             print("Hasta pronto")
