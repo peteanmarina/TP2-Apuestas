@@ -246,8 +246,8 @@ def obtener_fixtures()->dict:
             pago_local=calcular_pago_equipo_partido(local_win_or_draw)
             pago_visitante= calcular_pago_equipo_partido(visitante_team_win_or_draw)
 
-            fixture['teams']['home']['cantidad_veces_pago'] = pago_local
-            fixture['teams']['away']['cantidad_veces_pago'] = pago_visitante
+            partido['teams']['home']['cantidad_veces_pago'] = pago_local
+            partido['teams']['away']['cantidad_veces_pago'] = pago_visitante
 
     else:
         print("Error en la solicitud:", respuesta.status_code)
