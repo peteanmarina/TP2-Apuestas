@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 import csv
 import random
 import matplotlib
-
+#vicky, para el ingreso de dinero, ver funcion"registrar_nueva_transaccion"
 def cargar_usuarios() -> dict:
     usuarios = {}
     archivo_usuarios = 'usuarios.csv'
@@ -90,7 +90,9 @@ def mostrar_menu():
     print("2) Mostrar la tabla de posiciones de la Liga profesional, ingresando la temporada")
     print("3) Mostrar toda la información posible sobre el estadio y escudo de un equipo")
     print("4) Mostrar los goles y los minutos en los que fueron realizados para un equipo")
-    print("5) Cargar dinero en cuenta de usuario")
+    print("5) Cargar dinero en cuenta de usuario") 
+    print("6)") 
+    print("7)")
     print("8) Apostar")
     
 def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict):
@@ -260,6 +262,14 @@ def obtener_fixture_de_equipo(id_equipo:int, fixtures:dict)->dict:
         if(fixtures['teams']['home']==id_equipo or fixtures['teams']['away']==id_equipo):
             fixture_equipo=partido
     return fixture_equipo
+
+def registrar_nueva_transaccion(id_usuario, tipo_resultado, importe):
+    print("Ingrese la fecha de hoy YYYYMMDD")
+    fecha= input()
+
+    with open('transacciones.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([id_usuario, fecha, tipo_resultado, importe])
 
 def mostrar_equipos(equipos):
     for equipo in equipos:
