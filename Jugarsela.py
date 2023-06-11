@@ -265,11 +265,13 @@ def obtener_fixture_de_equipo(id_equipo:int, fixtures:dict)->dict:
 
 def registrar_nueva_transaccion(id_usuario, tipo_resultado, importe):
     print("Ingrese la fecha de hoy YYYYMMDD")
-    fecha= input()
+    fecha= validar_fecha()
+    with open('transacciones.csv', mode='a', newline='') as archivo: #modo de escritura, agrega una linea al final
+        writer = csv.writer(archivo)
+        writer.writerow( [id_usuario, fecha, tipo_resultado, importe])
 
-    with open('transacciones.csv', mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([id_usuario, fecha, tipo_resultado, importe])
+def validar_fecha()->int: #TODO
+    return input()
 
 def mostrar_equipos(equipos):
     for equipo in equipos:
