@@ -4,6 +4,9 @@ from passlib.context import CryptContext
 import csv
 import random
 import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import tempfile
 #vicky, para el ingreso de dinero, ver funcion"registrar_nueva_transaccion"
 
 def ingresar_entero(min: int, max: int)->int:
@@ -109,7 +112,7 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
         print("Ingrese nombre del equipo que desee ver el plantel")
-        equipo_elegido= input()
+        equipo_elegido=input()
         id=0
         while(id==0):
             id= obtener_id_equipo(equipos, equipo_elegido)
@@ -144,12 +147,13 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     informacion_partidos={}
     for partido in fixtures:
         if(partido["teams"]["home"]["id"]==id_equipo or partido["teams"]["away"]["id"]==id_equipo):
+            id_partido=partido['fixture']['id']
             local = partido["teams"]["home"]["name"]
             visitante = partido["teams"]["away"]["name"]
             pago_local= partido['teams']['home']['cantidad_veces_pago']
             pago_visitante= partido['teams']['away']['cantidad_veces_pago']
             fecha,hora = partido["fixture"]["date"].split('T')
-            informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante)
+            informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante, id_partido)
             print()
             print(f"Para la fecha: ",fecha)
             print(f"Equipo local:", local)
@@ -158,7 +162,7 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     print("Ingrese la fecha del partido para el que quiere apostar, YYYY-MM-DD")
     fecha= input() #validar fecha TODO
 
-    equipo_win_or_draw= obtener_win_or_draw()
+    equipo_win_or_draw= obtener_win_or_draw(informacion_partidos[fecha][4])
 
     if(equipo_win_or_draw == informacion_partidos[fecha][0]):
         informacion_partidos[fecha][2]=informacion_partidos[fecha][2]*10/100
@@ -176,23 +180,43 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
 
     if (dinero_suficiente):
         print("Descontando dinero...")
-        dinero_descontado= modificar_dinero_usuario(id_usuario, monto, "resta")
+        registrar_apuesta_en_usuario(id_usuario, monto, fecha)
+        #dinero_descontado= modificar_dinero_usuario(id_usuario, monto, "resta")
 
         print("1)Gana Local")
         print("2)Empate")
         print("3)Gana Visitante")
+
         respuesta=ingresar_entero(1,3)
-        
 
         resultado_simulado=random.randint(1, 3)
 
         #informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante)
 
-        registrar_nueva_transaccion(id_usuario, ganapierde, monto)
-
+        #registrar_nueva_transaccion(id_usuario, ganapierde, monto)
     else:
         print("Lamento informarle que no tiene dinero suficiente para realizar esta apuesta")
     
+def registrar_apuesta_en_usuario(id_usuario, monto, fecha):
+    archivo_usuarios = 'usuarios.csv'
+    if os.path.isfile(archivo_usuarios):
+        with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv:
+            csv_reader = csv.reader(archivo_csv)
+            filas = list(csv_reader)
+
+        # Encontrar el usuario específico y modificar los datos
+        usuario_modificar = id_usuario  # Usar el ID del usuario en lugar de un correo
+        for fila in filas:
+            if fila[0] == usuario_modificar:
+                fila[3] = float(fila[3])+ float(monto) 
+                fila[4] = fecha
+
+        # Guardar los datos actualizados en el archivo CSV
+        with open(archivo_usuarios, 'w', newline='', encoding='UTF-8') as archivo_csv:
+            escritor_csv = csv.writer(archivo_csv)
+            escritor_csv.writerows(filas)
+
+
 def obtener_win_or_draw(partido)-> str:
     url = "https://v3.football.api-sports.io/predictions"
     params = {
@@ -265,23 +289,41 @@ def obtener_equipos()->dict:
     # verifico estado de la solicitud
     if respuesta.status_code == 200: #si fue exitosa
         data = respuesta.json()
-        equipos = data['response']
-        
+        equipos = data['response']        
     else:
         print("Error en la solicitud:", respuesta.status_code)
     return equipos
 
-def mostrar_informacion_estadio_y_escudo(id_equipo, equipos): #falta lo del escudo
+def mostrar_informacion_estadio_y_escudo(id_equipo, equipos):
     estadio:dict={}
     for equipo in equipos:
         if(equipo['team']["id"]==id_equipo):
             estadio=equipo['venue']
+            equipo_elegido=equipo['team']
     
     print("Nombre del estadio:", estadio['name'])
     print("Dirección:", estadio['address'])
     print("Ciudad:", estadio['city'])
     print("Capacidad:", estadio['capacity'])
     print("Superficie:", estadio['surface'])
+
+    enlace_imagen = equipo_elegido['logo']
+
+    response = requests.get(enlace_imagen)
+
+    # guardo la imagen temporalmente
+    with tempfile.NamedTemporaryFile(delete=False) as imagen_temporal:
+        imagen_temporal.write(response.content)
+        nombre_imagen_temporal = imagen_temporal.name
+
+    # Cargar la imagen desde el archivo temporal
+    imagen = mpimg.imread(nombre_imagen_temporal)
+
+    # Mostrar la imagen
+    plt.imshow(imagen)
+    plt.axis('off')  # Opcional: ocultar los ejes
+    plt.show()
+    os.remove(nombre_imagen_temporal)
 
 
 def obtener_jugadores()->dict:
@@ -350,7 +392,6 @@ def validar_fecha()->int: #TODO
 def mostrar_equipos(equipos):
     for equipo in equipos:
         print(equipo['team']['name'])
-        print(equipo['team']['id'])
 
 def obtener_id_equipo(equipos, equipo_elegido)->str:
     #devuelve 0 si no se encuentra
@@ -359,10 +400,10 @@ def obtener_id_equipo(equipos, equipo_elegido)->str:
         if(equipo_elegido == equipo['team']['name']):
             print()
             id=equipo['team']['id']
-            print(equipo['team'])
     return id
 
 def main():   
+    registrar_apuesta_en_usuario("mariii@gmail.com", 200, "2023-06-11")
     finalizar = False
     id_usuario:str= 0
     while (id_usuario==0):
