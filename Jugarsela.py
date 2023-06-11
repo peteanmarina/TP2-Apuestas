@@ -150,7 +150,7 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
         pago_local= partido['teams']['home']['cantidad_veces_pago']
         pago_visitante= partido['teams']['away']['cantidad_veces_pago']
         fecha = partido["fixture"]["date"]
-        print(n:)
+        print(f"",n,")")
         print(f"Para el día ",fecha)
         print(f"Equipo local:", local, "paga: ",pago_local,"veces de lo apostado")
         print(f"Equipo visitante:", visitante,"paga: ",pago_visitante,"veces de lo apostado")
@@ -312,7 +312,7 @@ def main():
         if(input() == "1"):
             id_usuario = iniciar_sesion()
         else:
-            id_usuario= registrar_usuario()1
+            id_usuario= registrar_usuario()
     
     fixtures= obtener_fixtures()
     equipos=obtener_equipos()
