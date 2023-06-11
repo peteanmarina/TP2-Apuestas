@@ -141,33 +141,106 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     print("Ingrese nombre de un equipo para ver un listado del fixture")
     equipo_elegido= input()
     id_equipo= obtener_id_equipo(equipos, equipo_elegido)
-    fixture:dict= obtener_fixture_de_equipo(id_equipo, fixtures)
-    pago_por_partido_y_equipo={}
-    for partido in fixture:
-        n=1
-        local = partido["teams"]["home"]["name"]
-        visitante = partido["teams"]["away"]["name"]
-        pago_local= partido['teams']['home']['cantidad_veces_pago']
-        pago_visitante= partido['teams']['away']['cantidad_veces_pago']
-        fecha = partido["fixture"]["date"]
-        print(f"",n,")")
-        print(f"Para el día ",fecha)
-        print(f"Equipo local:", local, "paga: ",pago_local,"veces de lo apostado")
-        print(f"Equipo visitante:", visitante,"paga: ",pago_visitante,"veces de lo apostado")
-        n+=1
-    print("Ingrese la fecha del partido para el que quiere apostar, YYYYMMDD")
-    fecha= input()
+    informacion_partidos={}
+    for partido in fixtures:
+        if(partido["teams"]["home"]["id"]==id_equipo or partido["teams"]["away"]["id"]==id_equipo):
+            local = partido["teams"]["home"]["name"]
+            visitante = partido["teams"]["away"]["name"]
+            pago_local= partido['teams']['home']['cantidad_veces_pago']
+            pago_visitante= partido['teams']['away']['cantidad_veces_pago']
+            fecha,hora = partido["fixture"]["date"].split('T')
+            informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante)
+            print()
+            print(f"Para la fecha: ",fecha)
+            print(f"Equipo local:", local)
+            print(f"Equipo visitante:", visitante)
+            
+    print("Ingrese la fecha del partido para el que quiere apostar, YYYY-MM-DD")
+    fecha= input() #validar fecha TODO
 
-    #registrar_nueva_transaccion(id_usuario, tipo_resultado, importe)
+    equipo_win_or_draw= obtener_win_or_draw()
 
-
-def calcular_pago_equipo_partido(win_or_draw:bool)->float:
-    cantidad_veces=random.randint(1, 4)
-    if (win_or_draw):
-        porcentaje=10
+    if(equipo_win_or_draw == informacion_partidos[fecha][0]):
+        informacion_partidos[fecha][2]=informacion_partidos[fecha][2]*10/100
+    elif(equipo_win_or_draw == informacion_partidos[fecha][1]):
+        informacion_partidos[fecha][3]=informacion_partidos[fecha][3]*10/100
     else:
-        porcentaje=100
-    return cantidad_veces*porcentaje/100
+        print("Se produjo un error al reconocer win_or_draw")
+
+    print(f"Equipo local:", informacion_partidos[fecha][0], "paga: ",informacion_partidos[fecha][2],"veces de lo apostado")
+    print(f"Equipo visitante:", informacion_partidos[fecha][1],"paga: ",informacion_partidos[fecha][3],"veces de lo apostado")
+
+    print("Ingrese el monto a apostar")
+    monto= input()
+    dinero_suficiente= verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)
+
+    if (dinero_suficiente):
+        print("Descontando dinero...")
+        dinero_descontado= modificar_dinero_usuario(id_usuario, monto, "resta")
+
+        print("1)Gana Local")
+        print("2)Empate")
+        print("3)Gana Visitante")
+        respuesta=ingresar_entero(1,3)
+        
+
+        resultado_simulado=random.randint(1, 3)
+
+        #informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante)
+
+        registrar_nueva_transaccion(id_usuario, ganapierde, monto)
+
+    else:
+        print("Lamento informarle que no tiene dinero suficiente para realizar esta apuesta")
+    
+def obtener_win_or_draw(partido)-> str:
+    url = "https://v3.football.api-sports.io/predictions"
+    params = {
+        "fixture":partido
+    }
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
+    }
+    equipo_win_or_draw:str=""
+    respuesta = requests.get(url, params=params, headers=headers)
+
+    if respuesta.status_code == 200:
+        data = respuesta.json()
+        prediccion = data['response']
+        if prediccion["win_or_draw"]:
+            equipo_win_or_draw = prediccion["winner"]["name"]
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
+
+    return equipo_win_or_draw
+
+def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
+    pass
+
+def verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)->bool:
+    archivo_usuarios = 'usuarios.csv'
+    usuarios = {}
+
+    if os.path.isfile(archivo_usuarios):
+        with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv:
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)
+            for row in csv_reader:
+                correo = row[0]
+                usuarios[correo] = {
+                    'dinero': float(row[5])
+                }
+    dinero_suficiente= False
+    if id_usuario in usuarios:
+        dinero = usuarios[id_usuario]['dinero']
+        if dinero >= monto:
+            dinero_suficiente= True
+    return dinero_suficiente
+
+def obtener_cantidad_de_veces()->int:
+    cantidad_veces=random.randint(1, 4)
+    return cantidad_veces
 
 def mostrar_plantel(id_equipo:int, jugadores:dict)->None:
     for jugador in jugadores:
@@ -255,29 +328,14 @@ def obtener_fixtures()->dict:
         data = respuesta.json()
         fixture = data['response']
         for partido in fixture:
-            local_win_or_draw=False
-            visitante_team_win_or_draw=False
-
-            local_win_or_draw = partido["teams"]["home"].get("win_or_draw")
-            visitante_team_win_or_draw = partido["teams"]["away"].get("win_or_draw")
-
-            pago_local=calcular_pago_equipo_partido(local_win_or_draw)
-            pago_visitante= calcular_pago_equipo_partido(visitante_team_win_or_draw)
-
-            partido['teams']['home']['cantidad_veces_pago'] = pago_local
-            partido['teams']['away']['cantidad_veces_pago'] = pago_visitante
+            
+            partido['teams']['home']['cantidad_veces_pago'] = obtener_cantidad_de_veces()
+            partido['teams']['away']['cantidad_veces_pago'] = obtener_cantidad_de_veces()
 
     else:
         print("Error en la solicitud:", respuesta.status_code)
 
     return fixture
-
-def obtener_fixture_de_equipo(id_equipo:int, fixtures:dict)->dict:
-    fixture_equipo:dict={}
-    for partido in fixtures:
-        if(fixtures['teams']['home']==id_equipo or fixtures['teams']['away']==id_equipo):
-            fixture_equipo=partido
-    return fixture_equipo
 
 def registrar_nueva_transaccion(id_usuario, tipo_resultado, importe):
     print("Ingrese la fecha de hoy YYYYMMDD")
