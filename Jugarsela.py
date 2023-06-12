@@ -111,10 +111,10 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
     if opcion == "1": 
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
-        print("Ingrese nombre del equipo que desee ver el plantel")
-        equipo_elegido=input().capitalize()
         id=0
         while(id==0):
+            print("Ingrese nombre del equipo que desee ver el plantel")
+            equipo_elegido=input()
             id= obtener_id_equipo(equipos, equipo_elegido)
         mostrar_plantel(id, jugadores)
 
@@ -126,25 +126,31 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
     elif opcion == "3":
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
-        print("Ingrese nombre del equipo que desee ver la información sobre el estadio y su escudo")
-        equipo_elegido= input()
         id=0
         while(id==0):
+            print("Ingrese nombre del equipo que desee ver la información sobre el estadio y su escudo")
+            equipo_elegido= input()
             id=obtener_id_equipo(equipos, equipo_elegido)
         mostrar_informacion_estadio_y_escudo(id, equipos)
 
     elif opcion == "4":
         pass
+
     elif opcion == "5":
         confirmacion = input("¿Desea cargar dinero a cuenta? (S/N)").lower()
         if confirmacion == "s":
             modificar_dinero_usuario(id_usuario, " ", " ")
+
     elif opcion == "6": 
+
         print ("Usuario que más apostó") # probando funcion aparte 
     elif opcion == "7":
+
         print ("Usuario que más gano")  #idem 6
     elif opcion == "8":
+        print("Bienvenidx al sistema de apuestas")
         apostar(equipos, fixtures, id_usuario)
+
     else:
         print("Error, intente nuevamente (recuerde que debe ingresar un número)")
 
@@ -252,7 +258,6 @@ def obtener_win_or_draw(partido)-> str:
             equipo_win_or_draw = prediccion["winner"]["name"]
     else:
         print("Error en la solicitud:", respuesta.status_code)
-
     return equipo_win_or_draw
 
 def registrar_nueva_transaccion(id_usuario:str, tipo_resultado:str, importe:float, fecha_actual:str):
@@ -276,7 +281,6 @@ def registrar_nueva_transaccion(id_usuario:str, tipo_resultado:str, importe:floa
         'tipo': tipo_resultado,
         'importe': importe
     }
-    print(transacciones)
     with open('transacciones.csv', 'w', newline='', encoding='UTF-8') as archivo_csv:
         csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
         csv_writer.writerow(['id_usuario', 'fecha', 'tipo', 'importe'])  # Escribir el encabezado    
@@ -493,14 +497,11 @@ def obtener_id_equipo(equipos, equipo_elegido)->str:
     #devuelve 0 si no se encuentra
     id=0
     for equipo in equipos:
-        if(equipo_elegido == equipo['team']['name']):
-            print()
+        if(equipo_elegido) == (equipo['team']['name']):
             id=equipo['team']['id']
     return id
 
 def main():   
-    registrar_nueva_transaccion("maru@gmail.com", "Deposita", 300, "2023-04-06")
-
     finalizar = False
     id_usuario:str= 0
     while (id_usuario==0):
