@@ -112,7 +112,7 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
         mostrar_equipos(equipos)
         print("Ingrese nombre del equipo que desee ver el plantel")
-        equipo_elegido=input()
+        equipo_elegido=input().capitalize()
         id=0
         while(id==0):
             id= obtener_id_equipo(equipos, equipo_elegido)
@@ -187,9 +187,11 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     dinero_suficiente= verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)
 
     if (dinero_suficiente):
+        print("Ingrese la fecha de hoy")
+        fecha_actual=validar_fecha()
         print("Descontando dinero...")
-        registrar_apuesta_en_usuario(id_usuario, monto, fecha)
-        #dinero_descontado= modificar_dinero_usuario(id_usuario, monto, "resta")
+        registrar_apuesta_en_usuario(id_usuario, monto, fecha_actual)
+        modificar_dinero_usuario(id_usuario, monto, "Sacar")
 
         print("1)Gana Local")
         print("2)Empate")
@@ -199,9 +201,13 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
 
         resultado_simulado=random.randint(1, 3)
 
-        #informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante)
+        #if(resultado_simulado==respuesta): #TODO corregir cuando sepa como es
+            #gana el que eligió el usuario
+        #    registrar_nueva_transaccion(id_usuario, "Gana", monto, fecha_actual)
+        #else:
+        #    registrar_nueva_transaccion(id_usuario, "Pierde", monto, fecha_actual)
 
-        #registrar_nueva_transaccion(id_usuario, ganapierde, monto)
+        #informacion_partidos[fecha]=(local, visitante, pago_local, pago_visitante, id_partido)
     else:
         print("Lamento informarle que no tiene dinero suficiente para realizar esta apuesta")
     
@@ -247,11 +253,44 @@ def obtener_win_or_draw(partido)-> str:
 
     return equipo_win_or_draw
 
+def registrar_nueva_transaccion(id_usuario:str, tipo_resultado:str, importe:float, fecha_actual:str):
+    transacciones = {}
+    archivo_transacciones = 'transacciones.csv'
+    
+    if os.path.isfile(archivo_transacciones): # si el archivo existe
+        with open(archivo_transacciones, 'r', encoding='UTF-8') as archivo_csv: # modo lectura
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)  # Leer la primera línea (encabezado)
+            for row in csv_reader:
+                correo = row[0]
+                transacciones[correo] = {
+                    'fecha': row[1],
+                    'tipo': row[2],
+                    'importe': float(row[3])
+                }
+    
+    transacciones[id_usuario]={
+        'fecha': fecha_actual,
+        'tipo': tipo_resultado,
+        'importe': importe
+    }
+    print(transacciones)
+    with open('transacciones.csv', 'w', newline='', encoding='UTF-8') as archivo_csv:
+        csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer.writerow(['id_usuario', 'fecha', 'tipo', 'importe'])  # Escribir el encabezado    
+        for id_usuario, datos in transacciones.items():
+            csv_writer.writerow([
+                id_usuario,
+                datos['fecha'],
+                datos['tipo'],
+                datos['importe']
+            ])
+
 def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
-     archivo_usuarios = 'usuarios.csv'
-     usuarios = {}
+    archivo_usuarios = 'usuarios.csv'
+    usuarios = {}
      
-     if os.path.isfile(archivo_usuarios):
+    if os.path.isfile(archivo_usuarios):
         with open(archivo_usuarios, 'r', encoding='UTF-8') as archivo_csv:
             csv_reader = csv.reader(archivo_csv, delimiter=',')
             next(csv_reader)
@@ -261,14 +300,15 @@ def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
                     'dinero': float(row[5])
                 }
     
-     monto = input ("Monto a cargar: ")
-     monto = float(monto)
-     if id_usuario in usuarios:
+    monto = input ("Monto a cargar: ")
+    monto = float(monto)
+    if id_usuario in usuarios:
         dinero_en_cuenta = usuarios[id_usuario]['dinero'] 
         usuarios[id_usuario]["dinero"] = dinero_en_cuenta + monto
 
-     print (f"Ahora posee {usuarios[id_usuario]['dinero']} disponible en su cuenta. ")
+    print (f"Ahora posee {usuarios[id_usuario]['dinero']} disponible en su cuenta. ")
 
+    registrar_nueva_transaccion(id_usuario, "Deposita", monto)
 
 def verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)->bool:
     archivo_usuarios = 'usuarios.csv'
@@ -336,17 +376,13 @@ def mostrar_informacion_estadio_y_escudo(id_equipo, equipos):
     print("Superficie:", estadio['surface'])
 
     enlace_imagen = equipo_elegido['logo']
-
     response = requests.get(enlace_imagen)
-
     # guardo la imagen temporalmente
     with tempfile.NamedTemporaryFile(delete=False) as imagen_temporal:
         imagen_temporal.write(response.content)
         nombre_imagen_temporal = imagen_temporal.name
-
     # Cargar la imagen desde el archivo temporal
     imagen = mpimg.imread(nombre_imagen_temporal)
-
     # Mostrar la imagen
     plt.imshow(imagen)
     plt.axis('off')  # Opcional: ocultar los ejes
@@ -398,24 +434,33 @@ def obtener_fixtures()->dict:
         data = respuesta.json()
         fixture = data['response']
         for partido in fixture:
-            
             partido['teams']['home']['cantidad_veces_pago'] = obtener_cantidad_de_veces()
             partido['teams']['away']['cantidad_veces_pago'] = obtener_cantidad_de_veces()
-
     else:
         print("Error en la solicitud:", respuesta.status_code)
-
     return fixture
 
-def registrar_nueva_transaccion(id_usuario, tipo_resultado, importe):
-    print("Ingrese la fecha de hoy YYYYMMDD")
-    fecha= validar_fecha()
-    with open('transacciones.csv', mode='a', newline='') as archivo: #modo de escritura, agrega una linea al final
-        writer = csv.writer(archivo)
-        writer.writerow( [id_usuario, fecha, tipo_resultado, importe])
+def validar_fecha()->int:
+    fecha_invalida=True
+    fecha=0
+    while(fecha_invalida):
+        print("Ingrese fecha")
+        fecha=input()
+        partes = fecha.split('-')
 
-def validar_fecha()->int: #TODO
-    return input()
+        if ((len(partes) != 3)) or ((len(partes[0]) != 4) or (len(partes[1]) != 2) or (len(partes[2]) != 2)):
+            fecha_invalida=True
+
+        if ((not partes[0].isnumeric()) or (not partes[1].isnumeric()) or (not partes[2].isnumeric())):
+            fecha_invalida=True
+        else:
+            anio = int(partes[0])
+            mes = int(partes[1])
+            dia = int(partes[2])
+            if ((anio < 1) or (mes < 1) or (mes > 12) or (dia < 1) or (dia > 31)):
+                fecha_invalida=True
+
+    return fecha
 
 def mostrar_equipos(equipos):
     for equipo in equipos:
@@ -431,7 +476,8 @@ def obtener_id_equipo(equipos, equipo_elegido)->str:
     return id
 
 def main():   
-    registrar_apuesta_en_usuario("mariii@gmail.com", 200, "2023-06-11")
+    registrar_nueva_transaccion("maru@gmail.com", "Deposita", 300, "2023-04-06")
+
     finalizar = False
     id_usuario:str= 0
     while (id_usuario==0):
