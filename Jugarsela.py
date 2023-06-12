@@ -119,7 +119,9 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
         mostrar_plantel(id, jugadores)
 
     elif opcion == "2":
-        pass
+        print("Ingrese la temporada (el ano) de la cual desea ver la tabla de posiciones(junto a otras stats): ")
+        temporada:int = input("Temporada: ")
+        mostrar_tabla_posiciones(temporada)
 
     elif opcion == "3":
         print("Equipos de la Liga Profesional correspondiente a la temporada 2023:")
@@ -388,6 +390,27 @@ def mostrar_informacion_estadio_y_escudo(id_equipo, equipos):
     plt.axis('off')  # Opcional: ocultar los ejes
     plt.show()
     os.remove(nombre_imagen_temporal)
+
+def mostrar_tabla_posiciones(temporada)->dict: #temporada es año
+    url = "https://v3.football.api-sports.io/standings"
+    params = {
+        "league": "128",
+        "season": temporada
+    }
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "4040d1e6731f16a8ae5807e6d1dbcda8"
+    }
+    respuesta = requests.get(url, params=params, headers=headers)
+    posiciones={}
+    if respuesta.status_code == 200: #si fue exitosa
+        data = respuesta.json()
+        posiciones = data['response']
+        print("Posicion---Equipo---Pts---P.J---P.G---P.E---P.P")
+        for equipo in range(len(posiciones[0]['league']['standings'][0])):
+            print(posiciones[0]['league']['standings'][0][equipo]['rank'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['team']['name'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['points'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['all']['played'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['all']['win'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['all']['draw'],"-"*3,posiciones[0]['league']['standings'][0][equipo]['all']['lose'])
+    else:
+        print("Error en la solicitud:", respuesta.status_code)
 
 
 def obtener_jugadores()->dict:
