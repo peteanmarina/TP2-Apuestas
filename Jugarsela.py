@@ -139,7 +139,9 @@ def ejecutar_accion(opcion:str, equipos:dict, fixtures: dict, jugadores:dict, id
     elif opcion == "5":
         confirmacion = input("¿Desea cargar dinero a cuenta? (S/N)").lower()
         if confirmacion == "s":
-            modificar_dinero_usuario(id_usuario, " ", " ")
+            print("Ingrese monto a agregar")
+            monto=ingresar_entero(1,99999)
+            modificar_dinero_usuario(id_usuario, monto, "Sumar")
 
     elif opcion == "6": 
 
@@ -198,8 +200,8 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
         print("Ingrese la fecha de hoy")
         fecha_actual=validar_fecha()
         print("Descontando dinero...")
-        registrar_apuesta_en_usuario(id_usuario, monto, fecha_actual)
-        modificar_dinero_usuario(id_usuario, monto, "Sacar")
+        registrar_apuesta_en_usuario(id_usuario, monto, fecha_actual)#actualiza fecha ultima apuesta y suma monto al total apostado
+        modificar_dinero_usuario(id_usuario, monto, "Restar")
 
         print("1)Gana Local")
         print("2)Empate")
@@ -292,7 +294,7 @@ def registrar_nueva_transaccion(id_usuario:str, tipo_resultado:str, importe:floa
                 datos['importe']
             ])
 
-def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
+def modificar_dinero_usuario(id_usuario:str, monto:float, operación:str):
     archivo_usuarios = 'usuarios.csv'
     usuarios = {}
      
@@ -303,18 +305,25 @@ def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
             for row in csv_reader:
                 correo = row[0]
                 usuarios[correo] = {
+                    'nombre': row[1],
+                    'contrasena': row[2],
+                    'cantidad': float(row[3]),
+                    'fecha': row[4],
                     'dinero': float(row[5])
                 }
-    
-    monto = input ("Monto a cargar: ")
-    monto = float(monto)
+
     if id_usuario in usuarios:
         dinero_en_cuenta = usuarios[id_usuario]['dinero'] 
-        usuarios[id_usuario]["dinero"] = dinero_en_cuenta + monto
+        if(operación=="Sumar"):
+            usuarios[id_usuario]["dinero"] = dinero_en_cuenta + monto
+        elif(operación=="Restar"):
+            usuarios[id_usuario]["dinero"] = dinero_en_cuenta - monto
+        else:
+            print("Error al reconocer operación")
 
+    guardar_usuarios(usuarios)
     print (f"Ahora posee {usuarios[id_usuario]['dinero']} disponible en su cuenta. ")
 
-    registrar_nueva_transaccion(id_usuario, "Deposita", monto)
 
 def verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)->bool:
     archivo_usuarios = 'usuarios.csv'
@@ -403,7 +412,7 @@ def mostrar_tabla_posiciones(temporada)->dict: #temporada es año
     }
     headers = {
         'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "4040d1e6731f16a8ae5807e6d1dbcda8"
+        'x-rapidapi-key': "780851d3b9e161c8b5dddd46f9e9da9a"
     }
     respuesta = requests.get(url, params=params, headers=headers)
     posiciones={}
