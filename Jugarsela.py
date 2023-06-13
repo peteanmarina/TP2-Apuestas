@@ -197,9 +197,16 @@ def apostar(equipos:dict, fixtures: dict, id_usuario:int):
     if (dinero_suficiente):
         print("Ingrese la fecha de hoy")
         fecha_actual=validar_fecha()
-        print("Descontando dinero...")
-        registrar_apuesta_en_usuario(id_usuario, monto, fecha_actual)
-        modificar_dinero_usuario(id_usuario, monto, "Sacar")
+        
+#mientras el usuario este apostando, no deberiamos mostrar cambios de dinero en cuenta, 
+# solo se modifica el dinero una vez tenido el resultado de la apuesta
+#la unica modificaion de dinero en cuenta es cuando el usuario agrega mas plata (modificar_dinero_cuenta) y la suma con el monto que gano en la apueta
+#(registrar_apuesta_usuario) 
+#en el csv de transacciones solo se poner - si poierde, + si gana o deposita(pone dinero en cuenta), por lo tanto, no deneria haber una funcion
+#de sacar o agregar, solamente una suma o resta final en registrar apuestas
+        # print("Descontando dinero...") --> no hace falta aclararlo
+        # registrar_apuesta_en_usuario(id_usuario, monto, fecha_actual)---> deberia ir una vez que tengamos resultado apuesta, no en este lugar
+        # modificar_dinero_usuario(id_usuario, monto, "Sacar") --> no pide la consigna que lo mostremos            
 
         print("1)Gana Local")
         print("2)Empate")
@@ -291,8 +298,12 @@ def registrar_nueva_transaccion(id_usuario:str, tipo_resultado:str, importe:floa
                 datos['tipo'],
                 datos['importe']
             ])
+#preguntar tema key de transacciones.csv, no puede ser usaurios porque para hacer el punto 6 y 7 necesito ver todos las trabsacciones del usuario
+#y aca solo guardamos la ultima transccion, ya que la vamos actaulizando cada vez que lo llamamos
+#por ejemplo, si juan gana 50000 pesos, y despues carga 1000 pesos, el ultimo dato que tengo de juan, segun el codigo, es que deposito 1000, y podria
+#haber sido el que mas gano 
 
-def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
+def modificar_dinero_usuario(id_usuario, monto, fecha): #TODO
     archivo_usuarios = 'usuarios.csv'
     usuarios = {}
      
@@ -304,6 +315,7 @@ def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
                 correo = row[0]
                 usuarios[correo] = {
                     'dinero': float(row[5])
+
                 }
     
     monto = input ("Monto a cargar: ")
@@ -313,8 +325,9 @@ def modificar_dinero_usuario(id_usuario, monto, operación): #TODO
         usuarios[id_usuario]["dinero"] = dinero_en_cuenta + monto
 
     print (f"Ahora posee {usuarios[id_usuario]['dinero']} disponible en su cuenta. ")
-
-    registrar_nueva_transaccion(id_usuario, "Deposita", monto)
+    
+    registrar_apuesta_en_usuario(id_usuario, monto, fecha) #actauliza csv usuarios con deposito
+    registrar_nueva_transaccion(id_usuario, "Deposita", monto) 
 
 def verificar_si_usuario_tiene_dinero_suficiente(id_usuario, monto)->bool:
     archivo_usuarios = 'usuarios.csv'
